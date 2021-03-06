@@ -1,0 +1,22 @@
+sudo: required
+services:
+  - docker
+
+before_install:
+  - docker build -t nandrease/client-test -f ./client/Dockerfile.dev ./client
+
+script:
+  - docker run CI=true nandrease/client-test npm test -- --coverage
+
+after_success:
+  - docker build -t nandrease/multi-client ./client
+  - docker build -t nandrease/multi-nginx ./nginx
+  - docker build -t nandrease/multi-server ./server
+  - docker build -t nandrease/multi-worker ./worker
+  # Login to the docker CLI
+  - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_ID" --password-stdin
+  # Take the images and push them to docker hub
+  - docker push nandrease/multi-client
+  - docker push nandrease/multi-nginx
+  - docker push nandrease/multi-server
+  - docker push nandrease/multi-worker
